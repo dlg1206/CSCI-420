@@ -8,11 +8,11 @@
 /raw_data
 
 # venv
-/venv/
+/venv
 
 # convential commits
-/.husky/
+/.husky
 /commitlint.config.js
-/node_modules/
+/node_modules
 /package.json
 /package-lock.json
