@@ -1,0 +1,18 @@
+
+# IDE Files
+.idea
+.vscode
+*.iml
+
+# Raw data json
+/raw_data
+
+# venv
+/venv/
+
+# convential commits
+/.husky/
+/commitlint.config.js
+/node_modules/
+/package.json
+/package-lock.json
