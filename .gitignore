@@ -16,3 +16,9 @@
 /node_modules
 /package.json
 /package-lock.json
+
+# Env vars
+/.env
+
+# logging
+db_log.txt
