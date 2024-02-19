@@ -147,11 +147,15 @@ if __name__ == '__main__':
     row_num = 0
     for r in data:
         # uncomment for testing
-        if row_num > 5:
-            break
+        # if row_num > 5:
+        #     break
         # progress bar
         if row_num % round(NUM_REVIEWS % 50, 0) == 0:
             print("=", end="")
+        # Keep only electronics
+        if r['asin'][0] != "B":
+            continue
+
         clean(r)        # preprocess data
         upload(r, db)   # upload to DB
         row_num += 1
