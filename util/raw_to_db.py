@@ -28,6 +28,24 @@ POSTGRES_COLUMNS = (str(COLUMNS)
 LOG_FILE = "db_log.txt"
 
 
+class LogMessage:
+    def __init__(self, progress: str, id: int, status: str, msg: str, additional_info=None):
+        self.progress = progress
+        self.id = id
+        self.status = status
+        self.msg = msg
+        self.additional_info = additional_info
+
+    def short_msg(self) -> str:
+        return f"{self.progress} | {self.id}"
+
+    def __str__(self):
+        str = f"{self.progress} | {self.id} | {datetime.datetime.now()} | {self.status} | {self.msg}"
+        if self.additional_info is not None:
+            str += f" | {self.additional_info}"
+        return str
+
+
 def parse(path):
     """
     Open and load .json.gz file
@@ -92,6 +110,15 @@ def upload(row: dict, db: psycopg2) -> None:
     db.commit()
 
 
+def log(msg: LogMessage, print_short=False) -> None:
+    if print_short:
+        print(msg.short_msg())
+    else:
+        print(msg)
+    with open(LOG_FILE, "a+") as f:
+        f.write(str(msg) + "\n")
+
+
 if __name__ == '__main__':
     """
     usage: py raw_to_db.py <path to data>
@@ -134,29 +161,46 @@ if __name__ == '__main__':
 
     # Clean and Upload
     print("Cleaning Data and Uploading to DB")
-    print("Start                                          End")
+
     open(LOG_FILE, 'w').close()  # clear logging file
     row_num = 0
+    progress = -1
     for r in data:
+
         try:
             row_num += 1
             # uncomment for testing
-            # if row_num > 135000:
-            #     break
-            # progress bar
-            if row_num % round(NUM_REVIEWS / 50, 0) == 0:
-                print("=", end="")
+            if row_num > 135000:
+                break
+            # percent
+            progress = f"{round(100 * (row_num / NUM_REVIEWS), 2)}%"
+
             # Keep only electronics
             if r['asin'][0] != "B":
+                log(LogMessage(progress, row_num, "SKIPPED", "asin not start with 'B'"), True)
+                continue
+            # preprocess data
+            try:
+                clean(r)
+            except Exception as e:
+                log(LogMessage(progress, row_num, "FAILED", "Couldn't clean data", e))
                 continue
 
-            clean(r)        # preprocess data
-            upload(r, db)   # upload to DB
+            # upload to DB
+            try:
+                start_upload = time.perf_counter()
+                upload(r, db)
+                elapsed_upload = time.perf_counter() - start_upload
+            except Exception as e:
+                log(LogMessage(progress, row_num, "FAILED", "Couldn't upload data", e))
+                continue
+
+            print(LogMessage(progress, row_num, "SUCCESS", f"Upload Time: {elapsed_upload:.2f}s"))
 
         except Exception as e:
-            with open(LOG_FILE, "a+") as f:
-                f.write(f"{datetime.datetime.now()} | FAILED | {str(e)}\n")
+            log(LogMessage(progress, row_num, "FAILED", "Unknown Error", e))
+
     print()
 
     print(f"Done in {time.perf_counter() - start:.2f}s")
-    print(f"Execution log can be found at {LOG_FILE}")
+    print(f"Errors can be found at {LOG_FILE}")
