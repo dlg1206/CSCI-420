@@ -139,20 +139,23 @@ if __name__ == '__main__':
     row_num = 0
     for r in data:
         try:
+            row_num += 1
             # uncomment for testing
-            # if row_num > 5:
+            # if row_num > 135000:
             #     break
-            print(f"{row_num} / {NUM_REVIEWS}")
+            # progress bar
+            if row_num % round(NUM_REVIEWS / 50, 0) == 0:
+                print("=", end="")
             # Keep only electronics
             if r['asin'][0] != "B":
                 continue
 
             clean(r)        # preprocess data
             upload(r, db)   # upload to DB
-            row_num += 1
+
         except Exception as e:
             with open(LOG_FILE, "a+") as f:
-                f.write(f"{datetime.datetime.now()} | FAILED | {str(e).replace("\n", " ")}\n")
+                f.write(f"{datetime.datetime.now()} | FAILED | {str(e)}\n")
     print()
 
     print(f"Done in {time.perf_counter() - start:.2f}s")
