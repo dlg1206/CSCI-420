@@ -88,16 +88,8 @@ def upload(row: dict, db: psycopg2) -> None:
 
     # attempt to add and log result
     insert_query = f"INSERT INTO {TABLE} ({POSTGRES_COLUMNS}) VALUES ( {values_str} );"
-    status = "Failed"  # assume failure
-    try:
-        cursor.execute(insert_query)
-        db.commit()
-        status = "Success"
-    except Exception as e:
-        print(e)
-    finally:
-        with open(LOG_FILE, "a+") as f:
-            f.write(f"{datetime.datetime.now()} | {status} | {insert_query}\n")
+    cursor.execute(insert_query)
+    db.commit()
 
 
 if __name__ == '__main__':
@@ -146,20 +138,23 @@ if __name__ == '__main__':
     open(LOG_FILE, 'w').close()  # clear logging file
     row_num = 0
     for r in data:
-        # uncomment for testing
-        # if row_num > 5:
-        #     break
-        # progress bar
-        if row_num % round(NUM_REVIEWS % 50, 0) == 0:
-            print("=", end="")
-        # Keep only electronics
-        if r['asin'][0] != "B":
-            continue
+        try:
+            # uncomment for testing
+            # if row_num > 5:
+            #     break
+            # progress bar
+            if row_num % round(NUM_REVIEWS % 50, 0) == 0:
+                print("=", end="")
+            # Keep only electronics
+            if r['asin'][0] != "B":
+                continue
 
-        clean(r)        # preprocess data
-        upload(r, db)   # upload to DB
-        row_num += 1
-
+            clean(r)        # preprocess data
+            upload(r, db)   # upload to DB
+            row_num += 1
+        except Exception as e:
+            with open(LOG_FILE, "a+") as f:
+                f.write(f"{datetime.datetime.now()} | FAILED | {str(e).replace('\n', " ")}\n")
     print()
 
     print(f"Done in {time.perf_counter() - start:.2f}s")
