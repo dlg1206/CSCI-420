@@ -142,9 +142,7 @@ if __name__ == '__main__':
             # uncomment for testing
             # if row_num > 5:
             #     break
-            # progress bar
-            if row_num % round(NUM_REVIEWS % 50, 0) == 0:
-                print("=", end="")
+            print(f"{row_num} / {NUM_REVIEWS}")
             # Keep only electronics
             if r['asin'][0] != "B":
                 continue
