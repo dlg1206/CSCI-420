@@ -16,7 +16,7 @@ import psycopg2
 from dotenv import load_dotenv
 
 NUM_REVIEWS = 6739590
-PATH_TO_ENV = "../.env"
+PATH_TO_ENV = ".env"
 
 TABLE = "amz_reviews"
 COLUMNS = ["reviewerID", "asin", "reviewerName", "vote", "reviewText", "overall", "summary", "unixReviewTime"]
@@ -29,6 +29,9 @@ LOG_FILE = "db_log.txt"
 
 
 class LogMessage:
+    """
+    Create a standard log message
+    """
     def __init__(self, progress: str, id: int, status: str, msg: str, additional_info=None):
         self.progress = progress
         self.id = id
@@ -37,6 +40,9 @@ class LogMessage:
         self.additional_info = additional_info
 
     def short_msg(self) -> str:
+        """
+        :return: Shorten form of the log message
+        """
         return f"{self.progress} | {self.id}"
 
     def __str__(self):
@@ -179,6 +185,7 @@ if __name__ == '__main__':
             if r['asin'][0] != "B":
                 log(LogMessage(progress, row_num, "SKIPPED", "asin not start with 'B'"), True)
                 continue
+
             # preprocess data
             try:
                 clean(r)
