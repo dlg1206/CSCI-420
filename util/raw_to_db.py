@@ -152,7 +152,7 @@ if __name__ == '__main__':
             row_num += 1
         except Exception as e:
             with open(LOG_FILE, "a+") as f:
-                f.write(f"{datetime.datetime.now()} | FAILED | {str(e).replace('\n', " ")}\n")
+                f.write(f"{datetime.datetime.now()} | FAILED | {str(e).replace("\n", " ")}\n")
     print()
 
     print(f"Done in {time.perf_counter() - start:.2f}s")
