@@ -69,7 +69,9 @@ def clean(info: dict) -> None:
     Clean and prepare the data before uploading to the database
 
     :param info: Raw entry
-    """
+
+"""
+
     # Strip newlines from review
     if info.get('reviewText') is None:
         info['reviewText'] = None
@@ -91,6 +93,14 @@ def clean(info: dict) -> None:
     # Replace null with 0
     if info.get('vote') is None:
         info['vote'] = 0
+    else:
+        info['vote'] = int(info['vote'].replace(",", ""))
+
+    # Set value to float
+    if info.get('overall') is None:
+        info['vote'] = 0
+    else:
+        info['vote'] = int(info['vote'].replace(",", ""))
 
 
 def upload(row: dict, db: psycopg2) -> None:
@@ -111,8 +121,7 @@ def upload(row: dict, db: psycopg2) -> None:
     values_str = values_str[:len(values_str) - 2]  # truncate trailing ' ,'
 
     # attempt to add and log result
-    insert_query = f"INSERT INTO {TABLE} ({POSTGRES_COLUMNS}) VALUES ( {values_str} );"
-    cursor.execute(insert_query)
+    cursor.execute("INSERT INTO %s (%s) VALUES ( %s );", TABLE, POSTGRES_COLUMNS, values_str)
     db.commit()
 
 
