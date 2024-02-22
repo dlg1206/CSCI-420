@@ -70,38 +70,60 @@ def clean(info: dict) -> None:
 
     :param info: Raw entry
 
-"""
-
-    # Strip newlines from review
-    if info.get('reviewText') is None:
-        info['reviewText'] = None
-    else:
-        info['reviewText'] = "".join(info['reviewText'].splitlines()).replace("'", "''")  # '' prevents postgres errors
-
-    # Strip newlines from summary
-    # TODO need summary?
-    if info.get('summary') is None:
-        info['summary'] = None
-    else:
-        info['summary'] = "".join(info['summary'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+    """
 
     # Remove unused columns
     info.pop("image", None)
     info.pop("reviewTime", None)
     info.pop("style", None)
 
-    # Replace null with 0
+    # Strip newlines and double quote '
+    if info.get('reviewerID') is None:
+        info['reviewerID'] = None
+    else:
+        info['reviewerID'] = "".join(info['reviewerID'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+
+    # Strip newlines and double quote '
+    if info.get('asin') is None:
+        info['asin'] = None
+    else:
+        info['asin'] = "".join(info['asin'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+
+    # Strip newlines and double quote '
+    if info.get('reviewerName') is None:
+        info['reviewerName'] = None
+    else:
+        info['reviewerName'] = "".join(info['reviewerName'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+
+    # Strip newlines and double quote '
+    if info.get('reviewText') is None:
+        info['reviewText'] = None
+    else:
+        info['reviewText'] = "".join(info['reviewText'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+
+    # Strip newlines and double quote '
+    if info.get('summary') is None:
+        info['summary'] = None
+    else:
+        info['summary'] = "".join(info['summary'].splitlines()).replace("'", "''")  # '' prevents postgres errors
+
+
+    # Replace null with 0 and remove commas
     if info.get('vote') is None:
         info['vote'] = 0
     else:
         info['vote'] = int(info['vote'].replace(",", ""))
 
-    # Set value to float
+    # Set value to float and remove commas
     if info.get('overall') is None:
-        info['vote'] = 0
+        info['overall'] = None
     else:
-        info['vote'] = int(info['vote'].replace(",", ""))
+        info['overall'] = float(info['overall'].replace(",", ""))
 
+    if info.get('unixReviewTime') is None:
+        info['unixReviewTime'] = None
+    else:
+        info['unixReviewTime'] = int(info['unixReviewTime'].replace(",", ""))
 
 def upload(row: dict, db: psycopg2) -> None:
     """
