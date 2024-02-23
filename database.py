@@ -4,6 +4,8 @@ Description: database model to be used for data analyse
 
 @author Derek Garcia
 """
+import time
+
 import psycopg2
 import pandas as pd
 from pandas import DataFrame, Series
@@ -34,8 +36,10 @@ class Database:
         """
 
         with self.connection.cursor() as cursor:
+            start = time.perf_counter()
             cursor.execute(f"SELECT {column} FROM {table}")
             records = cursor.fetchall()
+            print(f"SELECT {column} FROM {table} | Query done in {time.perf_counter() - start:.2f}s")
             return pd.Series(map(lambda x: x[0], records))
 
     def get_columns(self, table: str, columns: list[str]) -> DataFrame:
@@ -47,10 +51,12 @@ class Database:
         :return: Dataframe
         """
         with self.connection.cursor() as cursor:
+            start = time.perf_counter()
             columns_str = (str(columns)
                            .replace("[", "")
                            .replace("]", "")
                            .replace("'", "\""))  # for postgres column
 
             cursor.execute(f"SELECT {columns_str} FROM {table}")
+            print(f"Query done in {time.perf_counter() - start:.2f}s")
             return pd.DataFrame(cursor.fetchall(), columns=columns)

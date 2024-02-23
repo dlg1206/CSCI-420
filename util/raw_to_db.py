@@ -16,7 +16,7 @@ import psycopg2
 from dotenv import load_dotenv
 
 NUM_REVIEWS = 6739590
-PATH_TO_ENV = ".env"
+PATH_TO_ENV = "../.env"
 
 TABLE = "amz_reviews"
 COLUMNS = ["reviewerID", "asin", "reviewlerName", "vote", "reviewText", "overall", "summary", "unixReviewTime"]
