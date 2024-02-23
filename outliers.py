@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 
-import psycopg2
 from dotenv import load_dotenv
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from database import Database
 
@@ -27,7 +26,7 @@ def find_outliers_IQR(df) -> DataFrame:
     return outliers
 
 
-def print_outlier_stats(df: DataFrame) -> None:
+def print_outlier_stats(df: Series | DataFrame) -> None:
     outliers = find_outliers_IQR(df)
     print(f"number of outliers: {len(outliers)}")
     print(f"% outliers: {round(100 * (len(outliers) / len(df)), 2)}")
@@ -48,3 +47,7 @@ if __name__ == '__main__':
     votes = db.get_column('amz_reviews', 'vote')
     print_outlier_stats(votes)
 
+    # WELL OPTIMIZED CODE THAT WILL DEFINITELY NOT EAT YOUR CPU AND RAM
+    # ( but run at your own risk )
+    review_text = db.get_column('amz_reviews', 'reviewtext')
+    print_outlier_stats(review_text.str.split().str.len())
