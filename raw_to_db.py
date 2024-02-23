@@ -19,7 +19,7 @@ NUM_REVIEWS = 6739590
 PATH_TO_ENV = ".env"
 
 TABLE = "amz_reviews"
-COLUMNS = ["reviewerID", "asin", "reviewerName", "vote", "reviewText", "overall", "summary", "unixReviewTime"]
+COLUMNS = ["reviewerID", "asin", "reviewlerName", "vote", "reviewText", "overall", "summary", "unixReviewTime"]
 POSTGRES_COLUMNS = (str(COLUMNS)
                     .replace("[", "")
                     .replace("]", "")
@@ -142,9 +142,14 @@ def upload(row: dict, db: psycopg2) -> None:
 
     values_str = values_str[:len(values_str) - 2]  # truncate trailing ' ,'
 
-    # attempt to add and log result
-    cursor.execute("INSERT INTO %s (%s) VALUES ( %s );", TABLE, POSTGRES_COLUMNS, values_str)
-    db.commit()
+    try:
+        # attempt to add and log result
+        cursor.execute("INSERT INTO %s (%s) VALUES ( %s );", TABLE, POSTGRES_COLUMNS, values_str)
+        db.commit()
+    except Exception as e:
+        raise e
+    finally:
+        cursor.close()
 
 
 def log(msg: LogMessage, print_short=False) -> None:
@@ -207,8 +212,8 @@ if __name__ == '__main__':
         try:
             row_num += 1
             # uncomment for testing
-            if row_num > 135000:
-                break
+            # if row_num > 135000:
+            #     break
             # percent
             progress = f"{round(100 * (row_num / NUM_REVIEWS), 2)}%"
 
