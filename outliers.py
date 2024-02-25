@@ -1,13 +1,14 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 from dotenv import load_dotenv
 from pandas import DataFrame, Series
-
+import time
 from database import Database
 
 PATH_TO_ENV = ".env"
-
+NUM_REVIEWS = 6739590
 
 class Outlier:
     def __init__(self, q1: int, q3: int):
@@ -56,10 +57,26 @@ if __name__ == '__main__':
         port=os.getenv("port")
     )
 
-    votes = db.get_column('amz_reviews', 'vote')
-    print_outlier_stats(votes)
+    # votes = db.get_column('amz_reviews', 'vote')
+    # print_outlier_stats(votes)
 
     # WELL OPTIMIZED CODE THAT WILL DEFINITELY NOT EAT YOUR CPU AND RAM
     # ( but run at your own risk )
-    # review_text = db.get_column('amz_reviews', 'reviewtext')
-    # print_outlier_stats(review_text.str.split().str.len())
+    query = "SELECT reviewtext FROM amz_reviews"
+    word_count = []
+    b = 0
+    with db.connection.cursor(name='csr') as cursor:
+        start = time.perf_counter()
+        cursor.itersize = 500000
+        cursor.execute(query)
+        print(f"Batch {b} / {round(NUM_REVIEWS / 500000), 2}")
+        b += 1
+        for row in cursor:
+            if row[0] is None:
+                word_count.append(0)
+            else:
+                word_count.append(len(row[1].split()))
+
+        print(f"Query done in {time.perf_counter() - start:.2f}s")
+
+    print_outlier_stats(pd.DataFrame(data=word_count, columns=['word count']))
