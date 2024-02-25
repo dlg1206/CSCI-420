@@ -9,6 +9,15 @@ from database import Database
 PATH_TO_ENV = ".env"
 
 
+class Outlier:
+    def __init__(self, q1: int, q3: int):
+        self.q1 = q1
+        self.q3 = q3
+        self.iqr = q3 - q1
+
+    def is_outlier(self, value: int) -> bool:
+        return value < (self.q1 - 1.5 * self.iqr) or value > (self.q3 + 1.5 * self.iqr)
+
 def find_outliers_IQR(df) -> DataFrame:
     """
     https://careerfoundry.com/en/blog/data-analytics/how-to-find-outliers/
@@ -20,6 +29,9 @@ def find_outliers_IQR(df) -> DataFrame:
     q3 = df.quantile(0.75)
 
     IQR = q3 - q1
+    print(f"q1: {q1}")
+    print(f"q3: {q3}")
+    print(f"IQR: {IQR}")
 
     outliers = df[((df < (q1 - 1.5 * IQR)) | (df > (q3 + 1.5 * IQR)))]
 
@@ -49,5 +61,5 @@ if __name__ == '__main__':
 
     # WELL OPTIMIZED CODE THAT WILL DEFINITELY NOT EAT YOUR CPU AND RAM
     # ( but run at your own risk )
-    review_text = db.get_column('amz_reviews', 'reviewtext')
-    print_outlier_stats(review_text.str.split().str.len())
+    # review_text = db.get_column('amz_reviews', 'reviewtext')
+    # print_outlier_stats(review_text.str.split().str.len())
