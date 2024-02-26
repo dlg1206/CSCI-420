@@ -60,3 +60,15 @@ class Database:
             cursor.execute(f"SELECT {columns_str} FROM {table}")
             print(f"Query done in {time.perf_counter() - start:.2f}s")
             return pd.DataFrame(cursor.fetchall(), columns=columns)
+
+    def get_all(self) -> DataFrame:
+        """
+        Get all the columns and convert to a dataframe
+
+        :return: Dataframe
+        """
+        with self.connection.cursor(name='csr') as cursor:
+            start = time.perf_counter()
+            cursor.execute(f"SELECT * FROM amz_reviews")
+            print(f"Query done in {time.perf_counter() - start:.2f}s")
+            return pd.DataFrame(cursor.fetchall())
