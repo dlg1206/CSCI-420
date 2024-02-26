@@ -41,17 +41,15 @@ if __name__ == '__main__':
             LogMessage(progress, row_num, "SUCCESS", f"Read").log(True, False)
             row_num += 1
 
-    batch = 0
     with db.connection.cursor() as cursor:
         try:
             start = time.perf_counter()
-            progress = f"{round(100 * (batch / NUM_REVIEWS), 2)}%"
+            progress = f"{round(100 * (row_num / NUM_REVIEWS), 2)}%"
             q = f"INSERT INTO vote_outliers VALUES %s"
             psycopg2.extras.execute_values(
                 cursor, q, outlier_uids, template=None, page_size=100
             )
-            LogMessage(progress, batch, "SUCCESS", f"Upload Time: {time.perf_counter() - start:.2f}s").log()
-            batch += BATCH_SIZE
+            LogMessage(progress, row_num, "SUCCESS", f"Upload Time: {time.perf_counter() - start:.2f}s").log()
         except Exception as e:
             LogMessage(progress, row_num, "FAILED", "Unknown Error", e).log(False, True)
         db.connection.commit()
