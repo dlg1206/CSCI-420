@@ -45,6 +45,14 @@ class LogMessage:
         """
         return f"{self.progress} | {self.id}"
 
+    def log(self, print_short=False) -> None:
+        if print_short:
+            print(self.short_msg())
+        else:
+            print(self)
+        with open(LOG_FILE, "a+") as f:
+            f.write(str(self) + "\n")
+
     def __str__(self):
         str = f"{self.progress} | {self.id} | {datetime.datetime.now()} | {self.status} | {self.msg}"
         if self.additional_info is not None:

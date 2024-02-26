@@ -64,19 +64,21 @@ if __name__ == '__main__':
     # ( but run at your own risk )
     query = "SELECT reviewtext FROM amz_reviews"
     word_count = []
-    b = 0
+    b = 1
     with db.connection.cursor(name='csr') as cursor:
         start = time.perf_counter()
         cursor.itersize = 500000
         cursor.execute(query)
-        print(f"Batch {b} / {round(NUM_REVIEWS / 500000), 2}")
+        print(f"Batch {b} / {round(NUM_REVIEWS / 500000, 0)}")
         b += 1
         for row in cursor:
             if row[0] is None:
                 word_count.append(0)
             else:
-                word_count.append(len(row[1].split()))
+                word_count.append(len(row[0].split()))
 
         print(f"Query done in {time.perf_counter() - start:.2f}s")
 
-    print_outlier_stats(pd.DataFrame(data=word_count, columns=['word count']))
+    df = pd.DataFrame(data=word_count, columns=['word count'])
+    print(df.describe())
+    print_outlier_stats(df)
