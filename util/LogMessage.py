@@ -12,6 +12,7 @@ class LogMessage:
         self.status = status
         self.msg = msg
         self.additional_info = additional_info
+        # open(LOG_FILE, 'w').close()  # clear logging file
 
     def short_msg(self) -> str:
         """
