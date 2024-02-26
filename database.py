@@ -35,7 +35,7 @@ class Database:
         :return: Series
         """
 
-        with self.connection.cursor() as cursor:
+        with self.connection.cursor(name='csr') as cursor:
             start = time.perf_counter()
             cursor.execute(f"SELECT {column} FROM {table}")
             records = cursor.fetchall()
@@ -50,7 +50,7 @@ class Database:
         :param columns: Name of columns to get
         :return: Dataframe
         """
-        with self.connection.cursor() as cursor:
+        with self.connection.cursor(name='csr') as cursor:
             start = time.perf_counter()
             columns_str = (str(columns)
                            .replace("[", "")
