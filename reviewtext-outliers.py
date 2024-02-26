@@ -1,12 +1,12 @@
 import os
-
-from pathlib import Path
 import time
+from pathlib import Path
+
 from dotenv import load_dotenv
-import pandas as pd
-from util.LogMessage import LogMessage
+
 from database import Database
 from outliers import Outlier
+from util.LogMessage import LogMessage
 
 PATH_TO_ENV = ".env"
 Q1 = 10
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     row_num = 0
     with db.connection.cursor(name='csr') as cursor:
 
-        cursor.itersize = 50
+        cursor.itersize = 500000
         cursor.execute(query)
 
         for row in cursor:
@@ -66,5 +66,3 @@ if __name__ == '__main__':
         except Exception as e:
             LogMessage(progress, row_num, "FAILED", "Unknown Error", e).log(False, True)
 
-
-        print(f"Query done in {time.perf_counter() - start:.2f}s")
