@@ -10,8 +10,8 @@ from outliers import Outlier
 from util.LogMessage import LogMessage
 
 PATH_TO_ENV = ".env"
-Q1 = 0
-Q3 = 0
+Q1 = 10
+Q3 = 71
 NUM_REVIEWS = 6739590
 BATCH_SIZE = 500000
 LOG_FILE = "vo_log.txt"
