@@ -26,14 +26,6 @@ db = Database(
 )
 
 
-def getSummaryStatisticsNumericAttributes():
-    """
-    This function will get the summary statistics for all the numeric attributes and print them to the console
-    :return: All the summary statistics to the console
-    """
-    print("do stuff")
-
-
 def bivariateAnalysisTwoVariables(var1, var2):
     """
     This function will print the bi-variate analysis to the console and print a scatter plot showing the
@@ -57,27 +49,64 @@ def multivariateAnalysisThreeVariables(var1, var2, var3):
     print("do stuff")
 
 
-def getHistogram(numericValue):
+def getHistogram(data_num, column, suffix):
     """
-    This function will get the summary statistics for all the numeric attributes and print them to the console
-    :param: numericAttribute: the attribute we will be getting the histogram for
+    This function will get the histogram for a numeric value
+    :param: data_num: the numeric values dataframe
+    :param: column: the column
+    :param: suffix: end of the sql statement
     :return: The histogram as an image
     """
-    print("do stuff")
+    data_num[column].hist(figsize=(8, 8))
+    plt.title(f"{column}: {suffix}.")
+    plt.savefig((f"SavedImages/Univariate_histogram{column}{suffix}.png").replace(" ", ""))
 
 
-def performEdaOnTable():
-    query = "SELECT * FROM amz_reviews"
-    row_num = 0
-
-    # Get all of the info into a dataframe
+def performEdaOnTable(suffix: str):
+    """
+    This function will perform eda on the given table
+    :params: the table name as a string
+    """
+    # Get all the info into a dataframe
     start = time.perf_counter()
-    allData = db.get_all()
+    all_data = db.get_all(suffix)
     print(f"Time to get all {time.perf_counter() - start:.2f}s")
 
+    # Drop the 9 column if there is one
+    if len(all_data.columns) > 9:
+        all_data = all_data.drop([9], axis=1)
+
+    # Create array of review text lengths
+    start = time.perf_counter()
+    text_lengths = []
+    for review in all_data['reviewtext']:
+        if review is None:
+            text_lengths.append(0)
+        else:
+            text_lengths.append(len(review.split()))
+
     # Add a new column to the data frame that has the review text length
+    all_data.insert(9, "text_lengths", text_lengths)
+    print(f"Time to insert text lengths {time.perf_counter() - start:.2f}s")
+
+    # Get summary statistics for numeric values
+    data_num = all_data.drop(["reviewerid", "asin", "reviewername", "reviewtext", "summary",
+                              "uid", "unixreviewtime"], axis=1)
+    print(f"\n{suffix}:\n{data_num.describe()}\n")
+
+    # Get histograms for the numeric values
+    getHistogram(data_num, 'overall', suffix)
+    getHistogram(data_num, 'text_lengths', suffix)
+    getHistogram(data_num, 'vote', suffix)
+
+    # Show correlations on numerical data
+    plt.figure(figsize=(8, 8))
+    sns.heatmap(data_num.corr(), annot=True, linewidths=.5, cmap="Blues")
+    plt.title('Heatmap showing correlations between numerical data')
+    plt.savefig((f"SavedImages/Multivariate_heatmap{suffix}.png").replace(" ", ""))
 
 
 if __name__ == '__main__':
-    performEdaOnTable()
-
+    performEdaOnTable("amz_reviews")
+    performEdaOnTable("amz_reviews INNER JOIN valid_vote ON amz_reviews.uid = valid_vote.uid")
+    performEdaOnTable("amz_reviews INNER JOIN valid_reviewtext ON amz_reviews.uid = valid_reviewtext.uid")

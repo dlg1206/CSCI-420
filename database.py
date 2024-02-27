@@ -61,14 +61,22 @@ class Database:
             print(f"Query done in {time.perf_counter() - start:.2f}s")
             return pd.DataFrame(cursor.fetchall(), columns=columns)
 
-    def get_all(self) -> DataFrame:
+    def get_all(self, table: str) -> DataFrame:
         """
         Get all the columns and convert to a dataframe
-
+        :params: table - the table to get all from
         :return: Dataframe
         """
         with self.connection.cursor(name='csr') as cursor:
             start = time.perf_counter()
-            cursor.execute(f"SELECT * FROM amz_reviews")
+            cursor.execute(f"SELECT * FROM {table}")
             print(f"Query done in {time.perf_counter() - start:.2f}s")
-            return pd.DataFrame(cursor.fetchall())
+            df = pd.DataFrame(cursor.fetchall())
+
+            # Rename columns
+            df.rename(
+                columns={0: "reviewerid", 1: "asin", 2: "reviewername", 3: "vote", 4: "reviewtext",
+                         5: "overall", 6: "summary", 7: "unixreviewtime", 8: "uid"},
+                inplace=True,
+            )
+            return df
