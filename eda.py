@@ -125,6 +125,8 @@ def performEdaOnTable(suffix: str):
     plt.savefig((f"SavedImages/Multivariate_heatmap{suffix}.png").replace(" ", ""))
     plt.clf()
 
+    print(data_num['vote'])
+
     # Create countplot
     bivariateAnalysisCountPlot(data_num, "overall", "text_lengths", suffix)
 
