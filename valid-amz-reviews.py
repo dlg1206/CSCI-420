@@ -73,7 +73,7 @@ if __name__ == '__main__':
         host=os.getenv("host"),
         port=os.getenv("port")
     )
-    query = "SELECT amz_reviews.uid FROM amz_reviews JOIN valid_vote ON amz_reviews.uid = valid_vote.uid JOIN valid_reviewtext ON valid_vote.uid = valid_reviewtext.uid;"
+    query = "SELECT amz_reviews.uid FROM amz_reviews NATURAL JOIN valid_vote NATURAL JOIN valid_reviewtext;"
 
     row_num = 0
     start_time = time.perf_counter()
@@ -104,6 +104,28 @@ if __name__ == '__main__':
                 LogMessage(progress, row_num, "-", f"Querying database with batch size {BATCH_SIZE}. . .").log()
 
     list_size = len(uids)
+    with db.connection.cursor() as cursor:
+        count = 0
+        q = f"INSERT INTO valid_amz_reviews VALUES %s;"
+        psycopg2.extras.execute_values(
+            cursor, q, uids, template=None, page_size=500
+        )
+        # leng = len(uids)
+        # cursor.executemany("INSERT into valid_amz_reviews values (%s);", )
+        db.connection.commit()
+        # for uid in uids:
+        #     q = f"INSERT INTO valid_amz_reviews VALUES %s"
+        #     psycopg2.extras.execute_values(
+        #         cursor, q, uids, template=None, page_size=500
+        #     )
+        #
+        #
+        #     count += 1
+        #     print(f"{count / leng:.2f}%")
+
+        LogMessage(progress, row_num, "SUCCESS", f"Total Time: {time.perf_counter() - start_time:.2f}s").log()
+        LogMessage(progress, row_num, "SUCCESS", f"Uploaded {list_size} uids").log()
+
     # data = []
     # start = 0
     # end = 0
@@ -123,21 +145,7 @@ if __name__ == '__main__':
     # with ThreadPool(processes=1219) as pool:
     #     pool.starmap(upload, data)
 
-    asyncio.run(upload(uids))
-    # with db.connection.cursor() as cursor:
-    #     count = 0
-    #     leng = len(uids)
-    #     for uid in uids:
-    #         # q = f"INSERT INTO valid_amz_reviews VALUES %s"
-    #         # psycopg2.extras.execute_values(
-    #         #     cursor, q, uids, template=None, page_size=500
-    #         # )
-    #
-    #         cursor.execute("INSERT into valid_amz_reviews values (" + str(uid) + ");")
-    #         db.connection.commit()
-    #         count += 1
-    #         print(f"{count / leng:.2f}%")
+    # asyncio.run(upload(uids))
 
 
-    LogMessage(progress, row_num, "SUCCESS", f"Total Time: {time.perf_counter() - start_time:.2f}s").log()
-    LogMessage(progress, row_num, "SUCCESS", f"Uploaded {list_size} uids").log()
+
