@@ -75,4 +75,4 @@ def sentiment_analysis(suffix: str):
 
 
 if __name__ == '__main__':
-    sentiment_analysis("amz_reviews")
+    sentiment_analysis("valid_amz_reviews")
