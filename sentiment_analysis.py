@@ -1,78 +1,92 @@
 import os
 import time
 from pathlib import Path
-from random import sample
 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
+import psycopg2.extras
 from dotenv import load_dotenv
-from scipy.stats import ttest_ind, ttest_rel
-from scipy import stats
-from sqlalchemy.dialects.postgresql import psycopg2
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 from database import Database
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from util.LogMessage import LogMessage
 
 # Macros
 PATH_TO_ENV = ".env"
-NUM_REVIEWS = 6739590
-BATCH_SIZE = 500000
-LOG_FILE = "vo_log.txt"
+NUM_REVIEWS = 5486205
+BATCH_SIZE = 500
 
-# Load the database info
-load_dotenv(dotenv_path=Path(PATH_TO_ENV))
-db = Database(
-    database=os.getenv("database"),
-    user=os.getenv("user"),
-    password=os.getenv("password"),
-    host=os.getenv("host"),
-    port=os.getenv("port")
-)
+# Initialize Vader stuff
+ANALYZER = SentimentIntensityAnalyzer()
 
 
-def sentiment_analysis(suffix: str):
+def get_db_connection() -> Database:
+    print("Connecting to the database. . . ")
+    load_dotenv(dotenv_path=Path(PATH_TO_ENV))
+    db = Database(
+        database=os.getenv("database"),
+        user=os.getenv("user"),
+        password=os.getenv("password"),
+        host=os.getenv("host"),
+        port=os.getenv("port")
+    )
+    print("Connected!")
+    return db
+
+
+def sentiment_analysis(row: tuple[int, str]) -> (int, float):
     """
     This function will perform eda on the given table
     :params: the table name as a string
     """
-    # Get all the info into a dataframe
-    start = time.perf_counter()
-    all_data = db.get_all(suffix)
-    print(f"Time to get all {time.perf_counter() - start:.2f}s")
-
-    # Initialize Vader stuff
-    analyzer = SentimentIntensityAnalyzer()
 
     # Create array an empty array of review text lengths
-    start = time.perf_counter()
-    df = pd.DataFrame()
-    sentiment_values = []
-    ids = []
-    for index, row in all_data.iterrows():
-        vals = analyzer.polarity_scores(row['reviewtext'])
-        compound_value_normalized = (vals['compound'] + 1)/2
-        sentiment_values.append(compound_value_normalized)
-        id_value = row['uid']
-        ids.append(id_value)
+    if row[1] is None:
+        i = 1
+    vals = ANALYZER.polarity_scores(row[1])
+    compound_value_normalized = (vals['compound'] + 1) / 2
 
-    print(f"Time to perform sentiment analysis {time.perf_counter() - start:.2f}s")
+    return row[0], compound_value_normalized
 
-    df['uid'] = ids
-    df['sentiment_value'] = sentiment_values
 
-    # Add to db
-    start = time.perf_counter()
+if __name__ == '__main__':
+    db = get_db_connection()
+    query = "SELECT uid, reviewtext FROM amz_reviews NATURAL JOIN valid_amz_reviews WHERE reviewtext is not null;"
+
+    row_num = 0
+    start_time = time.perf_counter()
+    with db.connection.cursor(name='csr') as cursor:
+
+        start = time.perf_counter()
+        print(f"Number Connections: {round(NUM_REVIEWS / BATCH_SIZE, 0)}")
+        LogMessage("0%", row_num, "-", f"Querying database with batch size {BATCH_SIZE}. . .").log(False, False)
+        cursor.itersize = BATCH_SIZE
+        cursor.execute(query)
+
+        old_len = 0
+        sentient_values = []
+        for row in cursor:
+            progress = f"{round(100 * (row_num / NUM_REVIEWS), 2)}%"
+            if row_num % BATCH_SIZE == 0:
+                old_len = len(sentient_values)
+                LogMessage(progress, row_num, "SUCCESS", f"Response in {time.perf_counter() - start:.2f}s").log()
+
+            sentient_values.append(sentiment_analysis(row))
+
+            row_num += 1
+            LogMessage(progress, row_num, "", "").log(True, False)
+
+            if row_num % BATCH_SIZE == 0:
+                start = time.perf_counter()
+                LogMessage(progress, row_num, "SUCCESS", f"Processed {len(sentient_values) - old_len} reviews").log()
+                LogMessage(progress, row_num, "-", f"Querying database with batch size {BATCH_SIZE}. . .").log()
+
+    list_size = len(sentient_values)
     with db.connection.cursor() as cursor:
         count = 0
         q = f"INSERT INTO sentiment_analysis VALUES %s;"
         psycopg2.extras.execute_values(
-            cursor, q, df, template=None, page_size=500
+            cursor, q, sentient_values, template=None, page_size=500
         )
-
-    print(f"Time to add to database {time.perf_counter() - start:.2f}s")
-
-
-if __name__ == '__main__':
-    sentiment_analysis("valid_amz_reviews")
+        # leng = len(uids)
+        db.connection.commit()
+        LogMessage(progress, row_num, "SUCCESS", f"Total Time: {time.perf_counter() - start_time:.2f}s").log()
+        LogMessage(progress, row_num, "SUCCESS", f"Uploaded {list_size} scores").log()
