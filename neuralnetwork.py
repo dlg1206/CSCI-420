@@ -1,4 +1,5 @@
 import tensorflow as tf
+import keras
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -42,13 +43,17 @@ def GetAllData(sql_statement):
         else:
             text_lengths.append(len(review.split()))
 
-    # Add a new column to the data frame that has the review text length
-
     # Get the numerical values in the dataframe
     new_df = df.select_dtypes(include=np.number)
-    new_df = new_df.drop('vote')
-    new_df = new_df.drop('unixreviewtime')
-    new_df.insert(4, 'text_lengths', text_lengths)
+    new_df = new_df.drop(['vote', 'unixreviewtime'], axis=1)
+    new_df = new_df.drop([9, 10], axis=1)
+    new_df.columns = new_df.columns.astype(str)
+    new_df.rename(columns={'11': "score"})
+
+    # Add a new column to the data frame that has the review text length
+    new_df.insert(3, 'text_lengths', text_lengths)
+    print(new_df)
+    print("hi")
 
     # Scale the dataframe
     scaler = preprocessing.MinMaxScaler()
@@ -58,19 +63,14 @@ def GetAllData(sql_statement):
     # Shuffle the data frame
     shuffled_df = scaled_df.sample(frac=1)
 
-    plt.figure(figsize=(16, 8))
-    sns.heatmap(shuffled_df.corr(), annot=True, linewidths=.5, cmap="Blues")
-    plt.title('Heatmap showing correlations between numerical data')
-    plt.show()
-
     # Split the data
     train, test = train_test_split(shuffled_df, test_size=0.3)
     return train, test
 
 
 def Main():
-    RunNeuralNet("amz_reviews FULL OUTER JOIN valid_reviewtext ON amz_reviews.uid = valid_reviewtext.uid"
-                 " FULL OUTER JOIN sentiment_analysis ON amz_reviews.uid = sentiment_analysis.uid LIMIT 500")
+    RunNeuralNet("amz_reviews JOIN valid_reviewtext ON amz_reviews.uid = valid_reviewtext.uid"
+                 " JOIN sentiment_analysis ON amz_reviews.uid = sentiment_analysis.uid LIMIT 500")
 
 
 def RunNeuralNet(table_name):
